@@ -7,6 +7,9 @@ NOTE:
 - Functions are based on the user's uploaded lab programs.
 - The master file does not automatically execute every experiment.
 - Run master_menu() at the bottom to test functions interactively.
+
+
+pip install pycryptodome cryptography
 """
 
 import hashlib
