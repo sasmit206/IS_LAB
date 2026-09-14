@@ -212,10 +212,12 @@ def researcher_upload(researcher_name, private_key):
     )
 
     # Sign encrypted hash
-    signature = schnorr_signature(
+    signature_result = schnorr_signature(
         encrypted_hash,
         private_key
     )
+
+    signature = signature_result["signature"]
 
     # Create record
     new_record = {

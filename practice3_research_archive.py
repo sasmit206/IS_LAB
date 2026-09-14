@@ -153,7 +153,7 @@ def researcher_upload(researcher_name, private_key):
 
     record = input("Enter research record: ")
 
-    # Encrypt record using 3DES
+    # Encrypt record using AES
     encrypted_record = aes_encrypt(
         record
     )
@@ -168,7 +168,7 @@ def researcher_upload(researcher_name, private_key):
 
     # Sign encrypted hash
     signature = rsa_sign(
-        encrypted_hash,
+        plaintext_hash,
         private_key
     )
 
@@ -190,7 +190,7 @@ def researcher_upload(researcher_name, private_key):
     save_records(records)
 
     print("\nRecord uploaded successfully.")
-    print("SHA-1 Hash:", plaintext_hash)
+    print("SHA-256 Hash:", plaintext_hash)
     print("RSA Signature:", signature)
     print("Timestamp:", new_record["timestamp"])
 
@@ -208,7 +208,7 @@ def researcher_view(researcher_name):
 
             found = True
 
-            print("\nResearcher:", record["patient"])
+            print("\nResearcher:", record["researcher"])
             print("Encrypted Record:",
                   record["encrypted_record"])
             print("SHA-1 Hash:",
@@ -292,7 +292,7 @@ def admin_view(public_key):
         # but does NOT have the DES key
 
         valid = rsa_verify(
-            record["encrypted_hash"],
+            record["plaintext_hash"],
             record["signature"],
             public_key
         )
@@ -339,13 +339,6 @@ def admin_menu(public_key):
 # Reviewer Functions
 # ============================================================
 
-def rsa_verify(message, signature, public_key):
-    n, e = public_key
-    m = int.from_bytes(message.encode(), "big")
-    verified = pow(signature, e, n)
-    return verified == m
-
-
 def reviewer_verify(record, public_key):
 
     print("\n===== REVIEWER VERIFICATION =====")
@@ -376,11 +369,11 @@ def reviewer_verify(record, public_key):
           "VALID" if hash_valid else "INVALID")
 
     # --------------------------------------------------------
-    # SCHNORR VERIFICATION
+    # RSA VERIFICATION
     # --------------------------------------------------------
 
     signature_valid = rsa_verify(
-        record["encrypted_hash"],
+        record["plaintext_hash"],
         record["signature"],
         public_key
     )
