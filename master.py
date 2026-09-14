@@ -237,12 +237,53 @@ def hill_encrypt(text, key_matrix):
 
 
 def hill_decrypt(text, key_matrix):
-    # Kept separate because Hill decryption requires the modular
-    # inverse matrix. Use the inverse-matrix logic from the lab if
-    # your examiner gives a different key matrix.
-    raise NotImplementedError(
-        "Use the Hill inverse-matrix/decryption code from your Lab 1 file."
-    )
+    n = len(key_matrix)
+
+    # Calculate determinant
+    det = 0
+
+    if n == 2:
+        det = (
+            key_matrix[0][0] * key_matrix[1][1]
+            - key_matrix[0][1] * key_matrix[1][0]
+        ) % 26
+    else:
+        raise ValueError("Only 2x2 Hill matrices are supported.")
+
+    # Find modular inverse of determinant
+    det_inv = mod_inverse(det, 26)
+
+    if det_inv is None:
+        raise ValueError("Key matrix is not invertible modulo 26.")
+
+    # Inverse of 2x2 matrix:
+    # [a b]^-1 = det^-1 [ d -b]
+    # [c d]            [-c  a]
+    a = key_matrix[0][0]
+    b = key_matrix[0][1]
+    c = key_matrix[1][0]
+    d = key_matrix[1][1]
+
+    inverse_matrix = [
+        [(det_inv * d) % 26, (det_inv * (-b)) % 26],
+        [(det_inv * (-c)) % 26, (det_inv * a) % 26]
+    ]
+
+    text = ''.join(ch for ch in text.lower() if ch.isalpha())
+
+    result = ""
+
+    for i in range(0, len(text), n):
+        block = [
+            ord(ch) - ord('a')
+            for ch in text[i:i + n]
+        ]
+
+        for row in inverse_matrix:
+            value = sum(row[j] * block[j] for j in range(n)) % 26
+            result += chr(value + ord('a'))
+
+    return result
 
 
 # ============================================================
@@ -523,14 +564,6 @@ def rsa_verify(message, signature_hex, public_key):
 
     except (ValueError, TypeError):
         return False
-
-
-def rsa_verify(message, signature, public_key):
-    n, e = public_key
-    m = int.from_bytes(message.encode(), "big")
-    verified = pow(signature, e, n)
-    return verified == m
-
 
 # ============================================================
 # LAB 5 - HASHING
@@ -1201,11 +1234,10 @@ def master_menu():
             print("Decrypted:", rsa_decrypt(cipher, private))
 
         elif choice == "14":
-            message = input("Enter short message: ")
-            signature, public, private = rsa_sign(message)
+            message = input("Enter message: ")
+            private, public = generate_rsa_keys()
+            signature = rsa_sign(message, private)
             print("Signature:", signature)
-            print("Public:", public)
-            print("Private:", private)
             print("Verified:", rsa_verify(message, signature, public))
 
         elif choice == "15":
